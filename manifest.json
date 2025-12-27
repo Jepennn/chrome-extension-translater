@@ -4,7 +4,7 @@
   "version": "1.0",
   "manifest_version": 3,
   "action": {
-    "default_popup": "dist/index.html",
+    "default_popup": "dist/ui/index.html",
     "default_icon": "images/icon.png"
   },
   "icons": {
@@ -13,12 +13,12 @@
     "128": "images/icon.png"
   },
   "background": {
-    "service_worker": "dist/service-worker.js",
+    "service_worker": "dist/ui/serviceWorker.js",
     "type": "module"
   },
   "content_scripts": [
     {
-      "js": ["dist/content.js"],
+      "js": ["dist/content/content.js"],
       "matches": ["<all_urls>"]
     }
   ],

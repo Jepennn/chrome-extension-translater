@@ -7,25 +7,26 @@ import path from "path";
 export default defineConfig({
   base: "./",
   build: {
+    // Bara för debugging, ta bort i produktion
+    minify: false,
     assetsInlineLimit: 0,
-    outDir: "dist",
+    outDir: "dist/ui",
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        serviceWorker: resolve(__dirname, "src/serviceWorker.ts"),
+      },
+
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
         assetFileNames: "[name].[ext]",
-      },
-      input: {
-        main: resolve(__dirname, "index.html"),
-        content: resolve(__dirname, "src/content.tsx"),
-        "service-worker": resolve(__dirname, "src/service-worker.ts"),
       },
     },
   },
   plugins: [
     react({
       include: /\.(jsx|tsx)$/,
-      exclude: /content\.tsx$/,
     }),
     tailwindcss(),
   ],

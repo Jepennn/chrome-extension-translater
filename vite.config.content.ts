@@ -23,6 +23,7 @@ export default defineConfig({
       output: {
         format: "iife",
         entryFileNames: "content.js",
+        assetFileNames: "content.css",
         inlineDynamicImports: true,
       },
     },

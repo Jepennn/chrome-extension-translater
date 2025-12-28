@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dictionary } from "./dictionary";
+import { NoAccessToAi } from "./noAccesToAi";
 
 type Step = {
   title: string;
@@ -25,15 +26,15 @@ const steps: Step[] = [
 
 function App() {
   const [activeIndex, setActiveIndex] = useState(0);
-
   const [showDictionary, setShowDictionary] = useState(false);
+  const [hasAccessAI] = useState("Translator" in window);
 
   const activeStep = steps[activeIndex];
-
   const goTo = (index: number) => {
     if (index < 0 || index >= steps.length) return;
     setActiveIndex(index);
   };
+
   const goNext = () => goTo(activeIndex + 1);
   const goPrev = () => goTo(activeIndex - 1);
 
@@ -44,6 +45,11 @@ function App() {
   const closeDictionary = () => {
     setShowDictionary(false);
   };
+
+  // If the user doesnt have access to chrome local AI, show requirements
+  if (!hasAccessAI) {
+    return <NoAccessToAi />;
+  }
 
   return (
     <>

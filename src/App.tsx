@@ -3,13 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Dictionary } from "./dictionary";
 import { NoAccessToAi } from "./noAccesToAi";
 
-type Step = {
-  title: string;
-  description: string;
-  badge: string;
-};
+//Importing custom types
+import type { IntroductionStep } from "./types";
 
-const steps: Step[] = [
+const steps: IntroductionStep[] = [
   {
     title: "Highlight & translate instantly",
     description:

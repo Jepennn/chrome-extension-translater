@@ -12,17 +12,25 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
   console.log("Info:", info);
   console.log("Tab:", tab);
 
   //Sending the marked text to the content script
   if (info.menuItemId === "translate-word" && tab?.id) {
     console.log("Sending message", info.selectionText);
-    const response = await chrome.tabs.sendMessage(tab.id, {
+    chrome.tabs.sendMessage(tab.id, {
       action: "SHOW_TRANSLATION",
-      text: info.selectionText,
+      text: info.selectionText ?? "",
+      length: info.selectionText?.length ?? 0,
+      
     });
-    console.log("Response:", response);
   }
 });
+
+// For the future when we need to listen for messages from the content script
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   console.log("Message:", message);
+//   console.log("Sender:", sender);
+//   console.log("SendResponse:", sendResponse);
+// });

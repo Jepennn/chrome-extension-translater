@@ -1,38 +1,71 @@
 import { useEffect, useState } from "react";
-import { X, Volume2, BookOpen, Sun, Moon } from "lucide-react";
+import { X, Volume2, BookOpen, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 
 //Importing custom types
 import type { TranslationMessage } from "./types";
 
 export function TooltipTranslation() {
-  console.log("TooltipTranslation component rendered");
-
-  const [text, setText] = useState<string>("");
+  const [originalText, setOriginalText] = useState<string>("");
+  const [translatedText, setTranslatedText] = useState<string>("");
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Store user settings from the message
   const [voiceMode, setVoiceMode] = useState<boolean>(true);
   const [dictionaryMode, setDictionaryMode] = useState<boolean>(true);
-  const [lightMode, setLightMode] = useState<boolean>(true);
+  const [sourceLang, setSourceLang] = useState<string>("en");
 
   const [position, setPosition] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
   });
 
+  // Use the speech synthesis hook
+  const { speak, cancel, isSpeaking } = useSpeechSynthesis();
+
+  // Handler functions for toolbar actions
+  const handleSpeak = () => {
+    if (originalText && sourceLang) {
+      speak(originalText, sourceLang);
+    }
+  };
+
+  const handleDictionary = () => {
+    // TODO: Implement dictionary functionality
+    console.log("Dictionary lookup for:", originalText);
+  };
+
+  const handleLearnMore = () => {
+    // Send message to service worker to open side panel
+    chrome.runtime.sendMessage({
+      action: "OPEN_SIDE_PANEL",
+    });
+  };
+
+  const handleClose = () => {
+    cancel(); // Cancel any ongoing speech
+    setIsVisible(false);
+    setOriginalText("");
+    setTranslatedText("");
+    setIsLoading(false);
+  };
+
   //TODO: Maybe move this logic to a custom hook
   useEffect(() => {
     const messageListener = async (message: TranslationMessage) => {
       //Message 1
       if (message.action === "SHOW_TRANSLATION") {
+        // Store the original text from the message
+        setOriginalText(message.text);
+
         // Update settings from the message (sent by service worker)
         setVoiceMode(message.voiceMode);
         setDictionaryMode(message.dictionaryMode);
-        setLightMode(message.lightMode);
+        setSourceLang("en"); // Currently hardcoded to English source
 
         // Get the current selection position
         const selection = window.getSelection();
@@ -51,21 +84,18 @@ export function TooltipTranslation() {
         // Show the overlay with loading state
         setIsVisible(true);
         setIsLoading(true);
-        setText("");
+        setTranslatedText("");
 
         try {
-          // Use targetLang from message (which comes from user settings via service worker)
-          const targetLanguage = message.targetLang;
-
           //Check if the user has the necessary capabilities to translate the text
           const translatorCapabilities = await Translator.availability({
             sourceLanguage: "en",
-            targetLanguage: targetLanguage,
+            targetLanguage: message.targetLang,
           });
 
           if (translatorCapabilities === "unavailable") {
             console.warn("Translation capabilities unavailable");
-            setText("Translation unavailable for this language");
+            setTranslatedText("Translation unavailable for this language");
             setIsLoading(false);
             return;
           }
@@ -73,16 +103,16 @@ export function TooltipTranslation() {
           // Create translator (this might take time if model needs to be downloaded)
           const translator = await Translator.create({
             sourceLanguage: "en",
-            targetLanguage: targetLanguage,
+            targetLanguage: message.targetLang,
           });
 
           // Translate the text
-          const translatedText = await translator.translate(message.text);
-          console.log("Translated text:", translatedText);
-          setText(translatedText);
+          const translated = await translator.translate(message.text);
+          console.log("Translated text:", translated);
+          setTranslatedText(translated);
         } catch (error) {
           console.error("Translation error:", error);
-          setText("Translation failed. Please try again.");
+          setTranslatedText("Translation failed. Please try again.");
         } finally {
           setIsLoading(false);
         }
@@ -123,35 +153,44 @@ export function TooltipTranslation() {
             <div className="flex items-center gap-1">
               {/* Options bar */}
               <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/30 px-1 py-0.5">
-                {/* Voice mode icon */}
+                {/* Voice mode button */}
                 {voiceMode && (
-                  <div className="rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-                    <Volume2 className="size-3.5" />
-                  </div>
+                  <button
+                    onClick={handleSpeak}
+                    disabled={!originalText || isLoading}
+                    className="rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Listen to pronunciation"
+                  >
+                    <Volume2 className={`size-3.5 ${isSpeaking ? "animate-pulse" : ""}`} />
+                  </button>
                 )}
 
-                {/* Dictionary mode icon */}
+                {/* Dictionary mode button */}
                 {dictionaryMode && (
-                  <div className="rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                  <button
+                    onClick={handleDictionary}
+                    className="rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+                    title="View dictionary definition"
+                  >
                     <BookOpen className="size-3.5" />
-                  </div>
+                  </button>
                 )}
 
-                {/* Light/Dark mode icon */}
-                <div className="rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-                  {lightMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-                </div>
+                {/* Learn More button */}
+                <button
+                  onClick={handleLearnMore}
+                  className="rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+                  title="Learn more about this translation"
+                >
+                  <Brain className="size-3.5" />
+                </button>
               </div>
 
               {/* Close button */}
               <Button
                 size="icon-sm"
                 variant="ghost"
-                onClick={() => {
-                  setIsVisible(false);
-                  setText("");
-                  setIsLoading(false);
-                }}
+                onClick={handleClose}
                 className="size-6 text-muted-foreground hover:text-foreground"
                 aria-label="Close translation"
               >
@@ -167,7 +206,7 @@ export function TooltipTranslation() {
               <p className="text-sm text-muted-foreground">Translating...</p>
             </div>
           ) : (
-            <p className="text-sm leading-relaxed text-foreground">{text}</p>
+            <p className="text-sm leading-relaxed text-foreground">{translatedText}</p>
           )}
         </div>
       </div>

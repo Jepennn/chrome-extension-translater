@@ -60,9 +60,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
-// For the future when we need to listen for messages from the content script
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   console.log("Message:", message);
-//   console.log("Sender:", sender);
-//   console.log("SendResponse:", sendResponse);
-// });
+// Listen for messages from the content script
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.action === "OPEN_SIDE_PANEL" && sender.tab?.id) {
+    chrome.sidePanel.open({ tabId: sender.tab.id });
+  }
+});

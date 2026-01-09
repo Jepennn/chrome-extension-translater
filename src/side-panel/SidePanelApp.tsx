@@ -26,9 +26,9 @@ export function SidePanelApp() {
       {/* Header for Pages */}
       <div className="flex items-center gap-2 p-4 border-b border-border bg-card shadow-xs z-10">
         <Button 
-          variant="ghost" 
+          variant="secondary" 
           size="icon" 
-          className="h-8 w-8 rounded-full" 
+          className="h-8 w-8 rounded-full bg-muted text-foreground hover:bg-muted/80 shadow-sm" 
           onClick={() => setCurrentView("menu")}
         >
           <ChevronLeft className="size-5" />
